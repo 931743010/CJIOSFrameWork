@@ -7,6 +7,7 @@
 //
 
 #import "AppDelegate.h"
+#import "CJDefined.h"
 
 @interface AppDelegate ()
 

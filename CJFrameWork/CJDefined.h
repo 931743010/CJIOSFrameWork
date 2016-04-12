@@ -1,7 +1,7 @@
 
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
-#import "YYKit.h"
+#import <YYKit.h>
 #import "CJUIButton.h"
 #import "CJUserManager.h"
 #import "CJController.h"
@@ -58,7 +58,6 @@ typedef void (^getErrorBlock)(int code,NSString *message);
 //开发版本/发布版本
 #define APP_DEBUG_MEMORY            @"APP_DEBUG_MEMORY"
 #define APP_DEBUG                   @"APP_DEBUG"
-
 
 
 //调试
