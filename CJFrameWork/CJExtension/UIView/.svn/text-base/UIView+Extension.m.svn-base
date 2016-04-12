@@ -1,0 +1,23 @@
+//
+//  UIView+Extension.m
+//  YSUseek
+//
+//  Created by orange on 15/4/14.
+//  Copyright (c) 2015年 liming4343@163.com. All rights reserved.
+//
+
+#import "UIView+Extension.h"
+
+@implementation UIView (Extension)
+- (UIImage *)rn_screenshot {
+    UIGraphicsBeginImageContext(self.bounds.size);
+    [self.layer renderInContext:UIGraphicsGetCurrentContext()];
+    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    NSData *imageData = UIImageJPEGRepresentation(image, 0.75);
+    image = [UIImage imageWithData:imageData];
+    
+    return image;
+}
+@end

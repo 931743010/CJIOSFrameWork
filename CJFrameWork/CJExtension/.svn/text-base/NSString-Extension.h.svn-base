@@ -1,0 +1,100 @@
+//
+//  StringUtil.h
+//  TwitterFon
+//
+//  Created by kaz on 7/20/08.
+//  Copyright 2008 naan studio. All rights reserved.
+//
+
+#import <regex.h>
+#import <string.h>
+#import <UIKit/UIKit.h>
+#include <stdint.h>
+#import <CommonCrypto/CommonDigest.h>
+
+@interface NSString (Extension)
+
+
+//des 加密
+-(NSString *)strCom;
+-(NSString *)strComjm;
+
+
+/**
+	返回#字符拼接格式串 变量后添加 nil 结束
+	@param key 字符串
+	@returns #字符拼接格式串
+ */
++ (NSString *)keyNames:(NSString *)key,...;
+
+/**
+	国际化字符串
+	@param string 字符串
+	@returns 国际化字符串
+ */
++ (NSString *)_tr:(NSString *)string,...;
++ (NSString *)_tr:(NSString *)fromTable key:(NSString *)string,...;
+
+/**
+	格式化分割数据为字典方式
+	@param format 分割字符
+	@returns 数据字典
+ */
++ (NSString*)base64encode:(NSString*)str;
+
+/**
+	去除html标签
+	@param html 字符串
+	@returns 去除<> 标签后的字符串 eg: <a href="http://www.xiaozumi.com">xiaozumi</a>  --> xiaozumi
+ */
++ (NSString *)flattenHTML:(NSString *)html; //
+- (NSString *)flattenHTML;
+
+- (NSDictionary *)paramsWithFormat:(NSString *)format;
+
+- (NSString *)md5;
+- (NSString*) sha1;
+
+- (NSString*)escapeHTML;
+
+- (NSString*)unescapeHTML;
+
+
+
+- (BOOL)matches:(NSString *) regex withSubstring:(NSMutableArray *) substring;
+
+- (CGSize)textSizeInLabel:(CGFloat)size constrainedToSize:(CGSize)cSize;
+- (CGSize)textSizeWithLabel:(UILabel*)label constrainedToSize:(CGSize)csize;
+- (CGFloat)labelHeightWithWidth:(CGFloat)width fontName:(NSString *)fontName fontSize:(CGFloat)fontSize padding:(UIEdgeInsets)padding;
+@end
+
+
+@interface NSString (LetterStyle)
+
+//首字母小写
+- (NSString *) firstLetterLowercase;
+
+//首字母大写
+- (NSString *) firstLetterCapital;
+
+@end
+
+@interface NSString (MTExtend)
+- (NSString*)numberString;
+
+/**
+ 判断uitextview输入内容是否是退格
+ @returns BOOL
+ */
+- (BOOL)isSpaceBack;
+
+/**
+ 删除字符串最后面的［*]内容
+ @returns string
+ */
+- (NSString*)removeEndCharacter;
+
+#pragma mark -
+#pragma mark -获取到时间
++(NSString *)getDate:(NSTimeInterval)msgCreatTime;
+@end

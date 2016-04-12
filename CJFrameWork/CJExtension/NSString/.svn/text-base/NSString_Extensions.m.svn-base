@@ -1,0 +1,192 @@
+//
+//  NSString_Extensions.m
+//  YSUseek
+//
+//  Created by mingzi on 14-11-3.
+//  Copyright (c) 2014年 liming4343@163.com. All rights reserved.
+//
+
+#import "NSString_Extensions.h"
+
+@implementation NSString (NSString_Extensions)
+
+- (NSString *) URLEncodedString {
+    NSMutableString * output = [NSMutableString string];
+    const char * source = [self UTF8String];
+    int sourceLen = strlen(source);
+    for (int i = 0; i < sourceLen; ++i) {
+        const unsigned char thisChar = (const unsigned char)source[i];
+        if (false && thisChar == ' '){
+            [output appendString:@"+"];
+        } else if (thisChar == '.'|| thisChar == '-' || thisChar == '_' || thisChar == '~' ||
+                   (thisChar >= 'a' && thisChar <= 'z') ||
+                   (thisChar >= 'A' && thisChar <= 'Z') ||
+                   (thisChar >= '0' && thisChar <= '9')) {
+            [output appendFormat:@"%c", thisChar];
+        } else {
+            [output appendFormat:@"%%%02X", thisChar];
+        }
+    }
+    return output;
+}
+
+
+- (NSString *)verificationCode
+{
+    NSArray *changeArray = [[NSArray alloc] initWithObjects:@"0",@"1",@"2",@"3",@"4",@"5",@"6",@"7",@"8",@"9",@"A",@"B",@"C",@"D",@"E",@"F",@"G",@"H",@"I",@"J",@"K",@"L",@"M",@"N",@"O",@"P",@"Q",@"R",@"S",@"T",@"U",@"V",@"W",@"X",@"Y",@"Z",@"a",@"b",@"c",@"d",@"e",@"f",@"g",@"h",@"i",@"j",@"k",@"l",@"m",@"n",@"o",@"p",@"q",@"r",@"s",@"t",@"u",@"v",@"w",@"x",@"y",@"z",nil];
+    
+    NSMutableString *getStr = [[NSMutableString alloc] initWithCapacity:5];
+    
+    NSMutableString *changeString = [[NSMutableString alloc] initWithCapacity:6];
+    for(NSInteger i = 0; i < 6; i++)
+    {
+        NSInteger index = arc4random() % ([changeArray count] - 1);
+        getStr = [changeArray objectAtIndex:index];
+        
+        changeString = (NSMutableString *)[changeString stringByAppendingString:getStr];
+    }
+    return changeString;
+}
+
++(NSString *)verificationnumberCode
+{
+    NSArray *changeArray = [[NSArray alloc] initWithObjects:@"0",@"1",@"2",@"3",@"4",@"5",@"6",@"7",@"8",@"9",nil];
+    
+    NSMutableString *getStr = [[NSMutableString alloc] initWithCapacity:5];
+    
+    NSMutableString *changeString = [[NSMutableString alloc] initWithCapacity:6];
+    for(NSInteger i = 0; i < 6; i++)
+    {
+        NSInteger index = arc4random() % ([changeArray count] - 1);
+        getStr = [changeArray objectAtIndex:index];
+        
+        changeString = (NSMutableString *)[changeString stringByAppendingString:getStr];
+    }
+    return changeString;
+}
+
+- (NSString *)intervalSinceNow: (NSString *) theDate
+{
+    NSArray *timeArray=[theDate componentsSeparatedByString:@"."];
+    theDate=[timeArray objectAtIndex:0];
+    
+    NSDateFormatter *date=[[NSDateFormatter alloc] init];
+    [date setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+    NSDate *d=[date dateFromString:theDate];
+    
+    NSTimeInterval late=[d timeIntervalSince1970]*1;
+    
+    
+    NSDate* dat = [NSDate date];
+    NSTimeInterval now=[dat timeIntervalSince1970]*1;
+    NSString *timeString=@"";
+    
+    NSTimeInterval cha=late-now;
+    
+    if (cha/3600<1) {
+        timeString = [NSString stringWithFormat:@"%f", cha/60];
+        timeString = [timeString substringToIndex:timeString.length-7];
+        timeString=[NSString stringWithFormat:@"剩余%@分", timeString];
+        
+    }
+    if (cha/3600>1&&cha/86400<1) {
+        timeString = [NSString stringWithFormat:@"%f", cha/3600];
+        timeString = [timeString substringToIndex:timeString.length-7];
+        timeString=[NSString stringWithFormat:@"剩余%@小时", timeString];
+    }
+    if (cha/86400>1)
+    {
+        timeString = [NSString stringWithFormat:@"%f", cha/86400];
+        timeString = [timeString substringToIndex:timeString.length-7];
+        timeString=[NSString stringWithFormat:@"剩余%@天", timeString];
+        
+    }
+    return timeString;
+}
+
+#pragma mark 字典封装json并加密
+-(NSDictionary *)setJSONOject:(NSDictionary *)params
+{
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:params
+                                                       options:NSJSONWritingPrettyPrinted
+                                                         error:nil];
+    NSString *json =[[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    NSDictionary *prams = [NSDictionary dictionaryWithObjectsAndKeys:[json strCom],@"client_sec", nil];
+    return prams;
+}
+
+#pragma mark 计算字符串宽高
+-(CGSize)sizeWithContext:(UIFont *)ft size:(CGSize)size
+{
+    NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc]init];
+    paragraphStyle.lineBreakMode = NSLineBreakByCharWrapping;
+    NSDictionary *attributes = @{NSFontAttributeName:ft, NSParagraphStyleAttributeName:paragraphStyle.copy};
+    CGSize bsize = [self boundingRectWithSize:size options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading  attributes:attributes context:nil].size;
+    return bsize;
+
+//    CGSize labelsize = [self sizeWithFont:ft
+//                           constrainedToSize:size
+//                               lineBreakMode:NSLineBreakByCharWrapping];
+//    return labelsize;
+}
+
+#pragma mark 验证输入手机号码是否正确
++ (BOOL)isMobileNumber:(NSString *)mobileNum
+{
+    /**
+     * 手机号码
+     * 移动：134[0-8],135,136,137,138,139,150,151,157,158,159,182,187,188
+     * 联通：130,131,132,152,155,156,185,186
+     * 电信：133,1349,153,180,189
+     */
+    NSString * MOBILE = @"^1(3[0-9]|5[0-35-9]|8[025-9])\\d{8}$";
+    /**
+     10         * 中国移动：China Mobile
+     11         * 134[0-8],135,136,137,138,139,150,151,157,158,159,182,187,188
+     12         */
+    NSString * CM = @"^1(34[0-8]|(3[5-9]|5[017-9]|8[278])\\d)\\d{7}$";
+    /**
+     15         * 中国联通：China Unicom
+     16         * 130,131,132,152,155,156,185,186
+     17         */
+    NSString * CU = @"^1(3[0-2]|5[256]|8[56])\\d{8}$";
+    /**
+     20         * 中国电信：China Telecom
+     21         * 133,1349,153,180,189
+     22         */
+    NSString * CT = @"^1((33|53|8[09])[0-9]|349)\\d{7}$";
+    /**
+     25         * 大陆地区固话及小灵通
+     26         * 区号：010,020,021,022,023,024,025,027,028,029
+     27         * 号码：七位或八位
+     28         */
+    // NSString * PHS = @"^0(10|2[0-5789]|\\d{3})\\d{7,8}$";
+    
+    NSPredicate *regextestmobile = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", MOBILE];
+    NSPredicate *regextestcm = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", CM];
+    NSPredicate *regextestcu = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", CU];
+    NSPredicate *regextestct = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", CT];
+    
+    if (([regextestmobile evaluateWithObject:mobileNum] == YES)
+        || ([regextestcm evaluateWithObject:mobileNum] == YES)
+        || ([regextestct evaluateWithObject:mobileNum] == YES)
+        || ([regextestcu evaluateWithObject:mobileNum] == YES))
+    {
+        return YES;
+    }
+    else
+    {
+        return NO;
+    }
+}
+
+
+- (NSString *)stringByTrimingWhitespace {
+    return [self stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+}
+
+- (NSUInteger)numberOfLines {
+    return [[self componentsSeparatedByString:@"\n"] count] + 1;
+}
+
+@end

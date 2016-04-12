@@ -1,0 +1,34 @@
+//
+//  NSString_Extensions.h
+//  YSUseek
+//
+//  Created by mingzi on 14-11-3.
+//  Copyright (c) 2014年 liming4343@163.com. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+@interface  NSString (NSString_Extensions)
+//返回数字字母验证码
+- (NSString *)verificationCode;
+//返回数字验证码
++(NSString *)verificationnumberCode;
+//计算时间差
+- (NSString *)intervalSinceNow: (NSString *) theDate;
+
+// 字典封装json并加密
+-(NSDictionary *)setJSONOject:(NSDictionary *)params;
+
+#pragma mark 计算字符串宽高
+-(CGSize)sizeWithContext:(UIFont *)ft size:(CGSize)size;
+#pragma mark 验证输入手机号码是否正确
++ (BOOL)isMobileNumber:(NSString *)mobile;
+
+- (NSString *) URLEncodedString;
+
+
+- (NSString *)stringByTrimingWhitespace;
+
+
+- (NSUInteger)numberOfLines;
+@end

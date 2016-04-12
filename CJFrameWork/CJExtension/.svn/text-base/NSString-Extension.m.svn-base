@@ -1,0 +1,589 @@
+//
+//  StringUtil.m
+//  TwitterFon
+//
+//  Created by kaz on 7/20/08.
+//  Copyright 2008 naan studio. All rights reserved.
+//
+
+#import "NSString-Extension.h"
+#import <CoreText/CoreText.h>
+#import "ysdes_base64_encode.h"
+
+static const char encodingTable[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+@implementation NSString (Extension)
+
+
+//des 加密
+-(NSString *)strCom
+{
+    
+    //     char * sourceStr  = (char *)malloc(sLen +1);
+    //    memset(sourceStr, 0, sLen + 1);
+    const char *  sourceStr = [self UTF8String];
+    int sLen= strlen(sourceStr);
+    //    memcpy(sourceStr, sourceStr1, sLen);
+    //[self getCString:sourceStr maxLength:sLen+1 encoding:NSUTF8StringEncoding];
+    //const char sourceStr[1024] = ;
+    int dLen = ((sLen + 8-sLen%8 + 2)/3) * 4 + 30;
+    char *buff1 = (char *)malloc(dLen);
+    memset(buff1,0,dLen);
+    des_encrpt(sourceStr,sLen,buff1);
+    NSString * str = [NSString stringWithUTF8String:buff1];
+    //    free(sourceStr);
+    free(buff1);
+    return str;
+}
+
+//解密
+-(NSString *)strComjm
+{
+    
+    
+    //     char * sourceStr  = (char *)malloc(sLen +1);
+    //    memset(sourceStr, 0, sLen + 1);
+    const char *  sourceStr = [self UTF8String];
+    int sLen= strlen(sourceStr);
+    //    memcpy(sourceStr, sourceStr1, sLen);
+    //[self getCString:sourceStr maxLength:sLen+1 encoding:NSUTF8StringEncoding];
+    //const char sourceStr[1024] = ;
+    int dLen = ((sLen + 8-sLen%8 + 2)/3) * 4 + 30;
+    char *buff1 = (char *)malloc(dLen);
+    memset(buff1,0,dLen);
+    des_decrpt(sourceStr,sLen,buff1);
+    NSString * str = [NSString stringWithUTF8String:buff1];
+    //    free(sourceStr);
+    free(buff1);
+    return str;
+}
+
+#pragma mark 使用#连接字符串
++ (NSString *)keyNames:(NSString *)key, ... {
+    id arg;
+    va_list argList;
+    NSMutableArray *params = [NSMutableArray arrayWithCapacity:0];
+    if(key) {
+        [params addObject:key];
+        va_start(argList,key);
+        while ((arg = va_arg(argList,id))){
+            if (arg) {
+                [params addObject:arg];
+            }
+        }
+        va_end(argList);
+    }
+    
+    if (params.count>0) {
+        return [params  componentsJoinedByString:@"#"];
+    }
+    return nil;
+}
+
+#pragma mark 翻译
++ (NSString *)_tr:(NSString *)fromTable key:(NSString *)string,... {
+    if (string && [string isKindOfClass:[NSString class]] && [string length]>0) {
+        NSString *text = NSLocalizedStringFromTable(string, fromTable, @"");
+        if (text) {
+            @try {
+                va_list argList;
+                va_start(argList, string);
+                NSString *outstring = [[NSString alloc] initWithFormat:text arguments:argList];
+                va_end(argList);
+                return [outstring autorelease];
+            }
+            @catch (NSException *exception) {
+                
+            }
+            @finally {
+                
+            }
+        }
+    }
+    return string;
+}
+
++ (NSString *)_tr:(NSString *)string, ... {
+    if (string && [string isKindOfClass:[NSString class]] && [string length]>0) {
+        NSString *text = NSLocalizedString(string, nil);
+        if (text) {
+            @try {
+                va_list argList;
+                va_start(argList, string);
+                NSString *outstring = [[NSString alloc] initWithFormat:text arguments:argList];
+                va_end(argList);
+                return [outstring autorelease];
+            }
+            @catch (NSException *exception) {
+                
+            }
+            @finally {
+                
+            }
+        }
+    }
+    return string;
+}
+
+- (NSDictionary *)paramsWithFormat:(NSString *)format {
+    NSArray *items = [self componentsSeparatedByString:format];
+    NSMutableDictionary *params = [NSMutableDictionary dictionaryWithCapacity:0];
+    for (NSString *item in items) {
+        NSArray *kv = [item componentsSeparatedByString:@"="];
+        if (kv.count>1) {
+            NSString *key = [kv objectAtIndex:0];
+            NSString *value = nil;
+            if (kv.count<=2) {
+                value = [kv objectAtIndex:1];
+            }else if(kv.count>=3){
+                NSInteger index = [key length]+1;
+                if (index>0 && index<item.length) {
+                    value = [item substringFromIndex:index];
+                }
+            }
+            if (key && value) {
+                [params setValue:value forKey:key];
+            }
+        }
+    }
+    return params;
+}
+
+
+
+
++ (NSString*)base64encode:(NSString*)str 
+{
+    if ([str length] == 0)
+        return @"";
+
+    const char *source = [str UTF8String];
+    int strlength  = strlen(source);
+    
+    char *characters = malloc(((strlength + 2) / 3) * 4);
+    if (characters == NULL)
+        return nil;
+
+    NSUInteger length = 0;
+    NSUInteger i = 0;
+
+    while (i < strlength) {
+        char buffer[3] = {0,0,0};
+        short bufferLength = 0;
+        while (bufferLength < 3 && i < strlength)
+            buffer[bufferLength++] = source[i++];
+        characters[length++] = encodingTable[(buffer[0] & 0xFC) >> 2];
+        characters[length++] = encodingTable[((buffer[0] & 0x03) << 4) | ((buffer[1] & 0xF0) >> 4)];
+        if (bufferLength > 1)
+            characters[length++] = encodingTable[((buffer[1] & 0x0F) << 2) | ((buffer[2] & 0xC0) >> 6)];
+        else characters[length++] = '=';
+        if (bufferLength > 2)
+            characters[length++] = encodingTable[buffer[2] & 0x3F];
+        else characters[length++] = '=';
+    }
+    
+    return [[[NSString alloc] initWithBytesNoCopy:characters length:length encoding:NSASCIIStringEncoding freeWhenDone:YES] autorelease];
+}
+
+- (NSString*)escapeHTML
+{
+	NSMutableString* s = [NSMutableString string];
+	
+	int start = 0;
+	NSUInteger len = [self length];
+	NSCharacterSet* chs = [NSCharacterSet characterSetWithCharactersInString:@"<>&\""];
+	
+	while (start < len) {
+		NSRange r = [self rangeOfCharacterFromSet:chs options:0 range:NSMakeRange(start, len-start)];
+		if (r.location == NSNotFound) {
+			[s appendString:[self substringFromIndex:start]];
+			break;
+		}
+		
+		if (start < r.location) {
+			[s appendString:[self substringWithRange:NSMakeRange(start, r.location-start)]];
+		}
+		
+		switch ([self characterAtIndex:r.location]) {
+			case '<':
+				[s appendString:@"&lt;"];
+				break;
+			case '>':
+				[s appendString:@"&gt;"];
+				break;
+			case '"':
+				[s appendString:@"&quot;"];
+				break;
+			case '&':
+				[s appendString:@"&amp;"];
+				break;
+		}
+		
+		start = r.location + 1;
+	}
+	
+	return s;
+}
+
+- (NSString*)unescapeHTML
+{
+	NSMutableString* s = [NSMutableString string];
+	NSMutableString* target = [[self mutableCopy] autorelease];
+	NSCharacterSet* chs = [NSCharacterSet characterSetWithCharactersInString:@"&"];
+	
+	while ([target length] > 0) {
+		NSRange r = [target rangeOfCharacterFromSet:chs];
+		if (r.location == NSNotFound) {
+			[s appendString:target];
+			break;
+		}
+		
+		if (r.location > 0) {
+			[s appendString:[target substringToIndex:r.location]];
+			[target deleteCharactersInRange:NSMakeRange(0, r.location)];
+		}
+		
+		if ([target hasPrefix:@"&lt;"]) {
+			[s appendString:@"<"];
+			[target deleteCharactersInRange:NSMakeRange(0, 4)];
+		} else if ([target hasPrefix:@"&gt;"]) {
+			[s appendString:@">"];
+			[target deleteCharactersInRange:NSMakeRange(0, 4)];
+		} else if ([target hasPrefix:@"&quot;"]) {
+			[s appendString:@"\""];
+			[target deleteCharactersInRange:NSMakeRange(0, 6)];
+		} else if ([target hasPrefix:@"&amp;"]) {
+			[s appendString:@"&"];
+			[target deleteCharactersInRange:NSMakeRange(0, 5)];
+		} else {
+			[s appendString:@"&"];
+			[target deleteCharactersInRange:NSMakeRange(0, 1)];
+		}
+	}
+	
+	return s;
+}
+
+//对value进行URL编码
+- (NSString*)encodeString:(NSString*)actionString URLencode:(NSStringEncoding)enc {
+	NSMutableString *escaped = [NSMutableString string];
+	[escaped setString:[actionString stringByAddingPercentEscapesUsingEncoding:enc]];
+	
+	[escaped replaceOccurrencesOfString:@"&" withString:@"%26" options:NSCaseInsensitiveSearch range:NSMakeRange(0, [escaped length])];
+	[escaped replaceOccurrencesOfString:@"+" withString:@"%2B" options:NSCaseInsensitiveSearch range:NSMakeRange(0, [escaped length])];
+	[escaped replaceOccurrencesOfString:@"," withString:@"%2C" options:NSCaseInsensitiveSearch range:NSMakeRange(0, [escaped length])];
+	[escaped replaceOccurrencesOfString:@"/" withString:@"%2F" options:NSCaseInsensitiveSearch range:NSMakeRange(0, [escaped length])];
+	[escaped replaceOccurrencesOfString:@":" withString:@"%3A" options:NSCaseInsensitiveSearch range:NSMakeRange(0, [escaped length])];
+	[escaped replaceOccurrencesOfString:@";" withString:@"%3B" options:NSCaseInsensitiveSearch range:NSMakeRange(0, [escaped length])];
+	[escaped replaceOccurrencesOfString:@"=" withString:@"%3D" options:NSCaseInsensitiveSearch range:NSMakeRange(0, [escaped length])];
+	[escaped replaceOccurrencesOfString:@"?" withString:@"%3F" options:NSCaseInsensitiveSearch range:NSMakeRange(0, [escaped length])];
+	[escaped replaceOccurrencesOfString:@"@" withString:@"%40" options:NSCaseInsensitiveSearch range:NSMakeRange(0, [escaped length])];
+	[escaped replaceOccurrencesOfString:@" " withString:@"+" options:NSCaseInsensitiveSearch range:NSMakeRange(0, [escaped length])];
+	[escaped replaceOccurrencesOfString:@"\t" withString:@"%09" options:NSCaseInsensitiveSearch range:NSMakeRange(0, [escaped length])];
+	[escaped replaceOccurrencesOfString:@"#" withString:@"%23" options:NSCaseInsensitiveSearch range:NSMakeRange(0, [escaped length])];
+	[escaped replaceOccurrencesOfString:@"<" withString:@"%3C" options:NSCaseInsensitiveSearch range:NSMakeRange(0, [escaped length])];
+	[escaped replaceOccurrencesOfString:@">" withString:@"%3E" options:NSCaseInsensitiveSearch range:NSMakeRange(0, [escaped length])];
+	[escaped replaceOccurrencesOfString:@"\"" withString:@"%22" options:NSCaseInsensitiveSearch range:NSMakeRange(0, [escaped length])];
+	[escaped replaceOccurrencesOfString:@"\n" withString:@"%0A" options:NSCaseInsensitiveSearch range:NSMakeRange(0, [escaped length])];
+	
+	return escaped;
+}
+
+
+#pragma mark--
+#pragma mark This method return the list of all the matching characters (only the one delimited by bracketed sub-expression) in a mutable array.
+
+- (BOOL)matches:(NSString *) regex withSubstring:(NSMutableArray *) substring{
+	BOOL result = NO;
+    regex_t re;
+    int ret;
+    const char *str = [self UTF8String];
+    char buf[strlen([self UTF8String]) + 1];
+    if ((ret =regcomp(&re, [regex UTF8String], REG_EXTENDED)) == 0) {
+		size_t nmatch = re.re_nsub +1;
+		regmatch_t pmatch[nmatch];
+		if (0 == regexec(&re, [self UTF8String], nmatch, pmatch, 0)) {
+			result = YES;
+			if (substring  != nil){
+				for (int i=1; i < nmatch; i++){
+					if (pmatch[i].rm_so == pmatch[i].rm_eo & pmatch[i].rm_so == -1) {
+						// there is no matching charaters for this partial expression
+						[substring addObject:@""];
+					}
+					else {
+						// return the found expressions
+                        int len = pmatch[i].rm_eo - pmatch[i].rm_so;
+                        buf[len] = 0;
+                        strncpy(buf, &str[pmatch[i].rm_so], len);
+                        [substring addObject:[NSString stringWithUTF8String:buf]];
+					}
+				}
+			}
+		}
+    }
+    else {
+        char errbuf[100];
+        regerror(ret, &re,errbuf,sizeof errbuf);
+        //nslog(@"regcomp: %s",errbuf);
+    }
+    regfree(&re);
+    return result;
+}
+
+- (NSString*) sha1
+{
+    const char *cstr = [self cStringUsingEncoding:NSUTF8StringEncoding];
+    NSData *data = [NSData dataWithBytes:cstr length:self.length];
+    
+    uint8_t digest[CC_SHA1_DIGEST_LENGTH];
+    
+    CC_SHA1(data.bytes, data.length, digest);
+    
+    NSMutableString* output = [NSMutableString stringWithCapacity:CC_SHA1_DIGEST_LENGTH * 2];
+    
+    for(int i = 0; i < CC_SHA1_DIGEST_LENGTH; i++)
+        [output appendFormat:@"%02x", digest[i]];
+    
+    return output;
+}
+        
+- (NSString *)md5
+{
+    if (self && [self length]>0) {
+        const char *cStr = [self UTF8String];
+        unsigned char result[16];
+        CC_MD5( cStr, strlen(cStr), result );
+        return [NSString stringWithFormat:@"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+                result[0], result[1], result[2], result[3], 
+                result[4], result[5], result[6], result[7],
+                result[8], result[9], result[10], result[11],
+                result[12], result[13], result[14], result[15]
+                ];
+    }
+    return @"";
+}
+
+- (CGSize)textSizeWithLabel:(UILabel*)label constrainedToSize:(CGSize)csize {
+     CGSize theStringSize = [self sizeWithFont:label.font 
+                             constrainedToSize:csize 
+                                 lineBreakMode:label.lineBreakMode];
+    return theStringSize;
+}
+
+- (CGSize)textSizeInLabel:(CGFloat)size constrainedToSize:(CGSize)cSize {
+    CGSize charSize = [self sizeWithFont:[UIFont boldSystemFontOfSize:size] constrainedToSize:cSize]; 
+    return charSize;
+}
+
+- (CGFloat)measureFrameHeightForText:(NSString *)text 
+							fontName:(NSString *)fontName 
+							fontSize:(CGFloat)fontSize 
+				  constrainedToWidth:(CGFloat)width 
+						  paddingTop:(CGFloat)paddingTop 
+						 paddingLeft:(CGFloat)paddingLeft
+{
+	if (![text length])
+		return 0.0;
+ 
+	CFMutableAttributedStringRef maString = CFAttributedStringCreateMutable(kCFAllocatorDefault, 0);
+	
+	CFAttributedStringBeginEditing(maString);
+	CFAttributedStringReplaceString(maString, CFRangeMake(0, 0), (CFStringRef)text);
+	
+	CTFontRef font = CTFontCreateWithName((CFStringRef)fontName, fontSize, NULL);
+	
+	CFAttributedStringSetAttribute(maString, CFRangeMake(0, CFAttributedStringGetLength(maString)), kCTFontAttributeName, font);
+	
+	CFAttributedStringEndEditing(maString);
+	
+	CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString(maString);
+	
+	CFRelease(font);
+	
+	CFRange fitRange = CFRangeMake(0,0);
+	CGSize size = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, CFRangeMake(0, CFStringGetLength((CFStringRef)maString)), NULL, CGSizeMake(width,CGFLOAT_MAX), &fitRange);
+	
+	CFRelease(maString);
+	CFRelease(framesetter);
+ 
+	int returnVal = size.height + (paddingTop * 2) + 1; // the + 1 might be a bit hacky, but it solves an issue where suggestFrameSizeWithContstrains may return a height that *only-just* doesn't
+    // fit the given text and it's attributes... It doesn't appear to have any adverse effects in every other situation.
+	
+	return (CGFloat)returnVal;
+}
+
+
+- (CGFloat)labelHeightWithWidth:(CGFloat)width fontName:(NSString *)fontName fontSize:(CGFloat)fontSize padding:(UIEdgeInsets)padding
+{
+    return [self measureFrameHeightForText:self 
+                                  fontName:fontName
+                                  fontSize:fontSize
+                        constrainedToWidth:width
+                                paddingTop:padding.top
+                               paddingLeft:padding.left];
+}
+
++ (NSString *)flattenHTML:(NSString *)html {
+    NSScanner *theScanner;
+    NSString *text = nil;
+    
+    theScanner = [NSScanner scannerWithString:html];
+    while ([theScanner isAtEnd] == NO) {
+        [theScanner scanUpToString:@"<" intoString:NULL] ;
+        [theScanner scanUpToString:@">" intoString:&text] ;
+        html = [html stringByReplacingOccurrencesOfString:
+                [ NSString stringWithFormat:@"%@>", text] withString:@""];
+    } 
+    return html;
+}
+
+- (NSString *)flattenHTML{
+    NSScanner *theScanner;
+    NSString *text = nil;
+    
+    theScanner = [NSScanner scannerWithString:self];
+    NSString *nhtml = self;
+    while ([theScanner isAtEnd] == NO) {
+        [theScanner scanUpToString:@"<" intoString:NULL] ;
+        [theScanner scanUpToString:@">" intoString:&text] ;
+        nhtml = [nhtml stringByReplacingOccurrencesOfString:
+                [ NSString stringWithFormat:@"%@>", text] withString:@""];
+    }
+    return nhtml;
+}
+@end
+
+@implementation NSString (LetterStyle)
+
+- (NSString *) firstLetterLowercase
+{
+    NSString * result = [[self substringToIndex: 1] lowercaseString];
+    if ( [self length] == 1 )
+        return ( result );
+    
+    return ( [result stringByAppendingString: [self substringFromIndex: 1]] );
+}
+
+
+- (NSString *) firstLetterCapital
+{
+    NSString * result = [[self substringToIndex: 1] capitalizedString];
+    if ( [self length] == 1 )
+        return ( result );
+    
+    return ( [result stringByAppendingString: [self substringFromIndex: 1]] );
+}
+
+@end
+
+@implementation NSString (MTExtend)
+- (NSString*)numberString
+{
+    NSString *string = [self stringByReplacingOccurrencesOfString:@" "
+                                                       withString:@""];
+    string = [string stringByReplacingOccurrencesOfString:@"("
+                                               withString:@""];
+    string = [string stringByReplacingOccurrencesOfString:@")"
+                                               withString:@""];
+    string = [string stringByReplacingOccurrencesOfString:@"-"
+                                               withString:@""];
+    return string;
+}
+
+- (NSString*)removeEndCharacter {
+    if ([self hasSuffix:@"]"]) {
+        NSRange range = [self rangeOfString:@"[" options:NSBackwardsSearch];
+        NSString *str = [self substringWithRange:NSMakeRange(0,range.location)];
+        return str;
+    }else {
+        if (self.length ==0) {
+            return self;
+        }
+        NSString *str = [self substringWithRange:NSMakeRange(0,self.length-1)];
+        return str;
+    }
+}
+
+- (BOOL)isSpaceBack {
+    const char * _char = [self cStringUsingEncoding:NSUTF8StringEncoding];
+    int isBackSpace = strcmp(_char, "\b");
+    if (isBackSpace == -8) {
+        return YES;
+    }
+    return NO;
+}
+
+- (NSString*) decodeFromPercentEscapeString:(NSString *) string {
+    return (__bridge NSString *) CFURLCreateStringByReplacingPercentEscapesUsingEncoding(NULL,
+                                                                                         (__bridge CFStringRef) string,
+                                                                                         CFSTR(""),
+                                                                                         kCFStringEncodingUTF8);
+}
+
+#pragma mark -
+#pragma mark -获取到时间
++(NSString *)getDate:(NSTimeInterval)msgCreatTime
+{
+    
+    NSString *strDataTime =nil;
+    
+    NSTimeInterval tmpTime;
+    NSTimeInterval time = [[NSDate date] timeIntervalSince1970];
+    NSTimeInterval secondsPerDay = msgCreatTime;
+    
+    NSDate *yesterday1 = [NSDate dateWithTimeIntervalSince1970:secondsPerDay];
+    NSDate *yesterday2 = [NSDate dateWithTimeIntervalSince1970:time];
+    NSDateFormatter  *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"dd"];
+    NSMutableString *timeString1 = [NSMutableString stringWithFormat:@"%@",[formatter stringFromDate:yesterday1]];
+    NSMutableString *timeString2 = [NSMutableString stringWithFormat:@"%@",[formatter stringFromDate:yesterday2]];
+    
+    NSString *strData1 = timeString1;
+    NSString *strData2 = timeString2;
+    int data1 = [strData1 intValue];
+    int data2 = [strData2 intValue];
+    
+    tmpTime = time - secondsPerDay;
+    
+    if ( tmpTime < 60) {
+        strDataTime =@"刚刚";
+    }
+    else if(tmpTime < 60 * 30){
+        strDataTime = [NSString stringWithFormat:@"%d分钟前",((int)tmpTime)/60];
+    }
+    else if(tmpTime < 24 * 60 * 60 && ((data2 - data1) == 0))
+    {
+        NSDate *yesterday = [NSDate dateWithTimeIntervalSince1970:secondsPerDay];
+        NSDateFormatter  *formatter = [[NSDateFormatter alloc] init];
+        [formatter setDateFormat:@"HH:mm"];
+        NSMutableString *timeString = [NSMutableString stringWithFormat:@"%@",[formatter stringFromDate:yesterday]];
+        strDataTime = timeString;
+    }
+    else if(tmpTime < 48 * 60 * 60 && ((data2 - data1) == 1))
+    {
+        NSDate *yesterday = [NSDate dateWithTimeIntervalSince1970:secondsPerDay];
+        NSDateFormatter  *formatter = [[NSDateFormatter alloc] init];
+        [formatter setDateFormat:@"HH:mm"];
+        NSMutableString *timeString = [NSMutableString stringWithFormat:@"昨天%@",[formatter stringFromDate:yesterday]];
+        strDataTime = timeString;
+    }
+    else if(tmpTime < 72* 60 *60 && ((data2 - data1) == 2))
+    {
+        NSDate *yesterday = [NSDate dateWithTimeIntervalSince1970:secondsPerDay];
+        NSDateFormatter  *formatter = [[NSDateFormatter alloc] init];
+        [formatter setDateFormat:@"HH:mm"];
+        NSMutableString *timeString = [NSMutableString stringWithFormat:@"前天%@",[formatter stringFromDate:yesterday]];
+        strDataTime=timeString;
+    }
+    else
+    {
+        NSDate *yesterday = [NSDate dateWithTimeIntervalSince1970:secondsPerDay];
+        NSDateFormatter  *formatter = [[NSDateFormatter alloc] init];
+        [formatter setDateFormat:@"MM-dd HH:mm"];
+        NSMutableString *timeString = [NSMutableString stringWithFormat:@"%@",[formatter stringFromDate:yesterday]];
+        strDataTime = timeString;
+    }
+    return strDataTime;
+}
+@end
+
